@@ -1,6 +1,7 @@
 ---
 name: all-routes-offline
 description: Use local All Routes APIs, repo-backed handlers, and optional local MCP for airport, airline, route-map, timetable-context, and dataset-health lookups without hosted credentials. Use when route discovery must stay grounded in this repo and work without the hosted All Routes MCP server.
+version: 1.3.23
 ---
 
 # All Routes Offline
@@ -12,8 +13,9 @@ Use this skill when the task needs route-discovery data grounded in this repo wi
 1. Prefer local repo surfaces over hosted services or third-party browsing.
 2. If the web app is available locally, use its `/api/*` endpoints first.
 3. If the worker is available locally, you may use the local anonymous `/mcp` endpoint as an optional secondary path.
-4. If neither server is running, inspect the repo-backed handlers and schemas directly and label the answer as code-backed/offline rather than live endpoint output.
-5. Read `references/local-surfaces.md` for concrete endpoint mappings and startup commands.
+4. Normalize common airport, city, airline, and alliance phrasing before choosing an endpoint; ask a targeted clarifying question when the normalized query maps to multiple plausible entities.
+5. If neither server is running, inspect the repo-backed handlers and schemas directly and label the answer as code-backed/offline rather than live endpoint output.
+6. Read `references/local-surfaces.md` for concrete endpoint mappings, query-normalization guidance, and startup commands.
 
 ## Workflow
 
@@ -24,6 +26,13 @@ Use this skill when the task needs route-discovery data grounded in this repo wi
 - `airline route map`: use the airline routes API.
 - `timetable context`: use the timetables API.
 - `dataset health`: use the data health API, and treat it as an ops/debug surface.
+
+Before calling an endpoint, translate common user phrasing into the narrowest stable identifiers:
+
+- Airport/city: prefer exact IATA/ICAO codes when supplied; otherwise search the city/airport phrase and preserve ambiguity instead of guessing.
+- Airline: normalize airline names, two-letter IATA, and three-letter ICAO codes into the airline lookup or route-map surfaces.
+- Alliance: map common alliance phrases to the API-supported alliance filter values and say when no alliance filter was applied.
+- Ambiguous phrases: return a short clarification prompt with the top plausible interpretations and the endpoint you would call for each.
 
 ### 2) Prefer the no-worker path
 
