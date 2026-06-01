@@ -14,8 +14,9 @@ Use this skill when the task needs route-discovery data grounded in this repo wi
 2. If the web app is available locally, use its `/api/*` endpoints first.
 3. If the worker is available locally, you may use the local anonymous `/mcp` endpoint as an optional secondary path.
 4. Normalize common airport, city, airline, and alliance phrasing before choosing an endpoint; ask a targeted clarifying question when the normalized query maps to multiple plausible entities.
-5. If neither server is running, inspect the repo-backed handlers and schemas directly and label the answer as code-backed/offline rather than live endpoint output.
-6. Read `references/local-surfaces.md` for concrete endpoint mappings, query-normalization guidance, and startup commands.
+5. Extract route filters such as nonstop, alliance, region, and direction before calling endpoints, then acknowledge the filters that were actually applied.
+6. If neither server is running, inspect the repo-backed handlers and schemas directly and label the answer as code-backed/offline rather than live endpoint output.
+7. Read `references/local-surfaces.md` for concrete endpoint mappings, query-normalization guidance, filter handling, and startup commands.
 
 ## Workflow
 
@@ -34,19 +35,31 @@ Before calling an endpoint, translate common user phrasing into the narrowest st
 - Alliance: map common alliance phrases to the API-supported alliance filter values and say when no alliance filter was applied.
 - Ambiguous phrases: return a short clarification prompt with the top plausible interpretations and the endpoint you would call for each.
 
-### 2) Prefer the no-worker path
+### 2) Apply route filters explicitly
+
+Translate user constraints into supported query parameters when possible, and keep unsupported preferences visible instead of silently dropping them:
+
+- Nonstop/direct preference: set `maxStops=0`; if the user says connections are acceptable, omit the nonstop constraint or use the broadest supported stops behavior.
+- Alliance preference: set `alliance=star`, `alliance=oneworld`, `alliance=skyteam`, or `alliance=all` after normalization.
+- Region preference: apply it as a result-summary or follow-up narrowing criterion unless the local endpoint exposes a region parameter; say when it was used as post-filter guidance rather than an API filter.
+- Route direction: preserve `origin` and `dest` exactly; for reverse-route requests, swap the endpoint parameters instead of describing the same query backwards.
+- Airline + route filters: for airline route maps, use the carrier route-map endpoint first and describe any route, region, or nonstop preference as the applied narrowing lens.
+
+In every filtered answer, include one compact line such as: `Applied filters: origin=LAX, dest=JFK, nonstop=maxStops=0, alliance=oneworld; region preference noted but not available as an endpoint filter.`
+
+### 3) Prefer the no-worker path
 
 - The primary path is local web APIs and repo-backed handlers, not hosted MCP.
 - If you need live local responses, start the web app with `pnpm --filter @all-routes/web dev`.
 - If the app is not running, inspect the local route handlers and shared schemas instead of inventing undocumented requests.
 
-### 3) Use local MCP only when helpful
+### 4) Use local MCP only when helpful
 
 - If the worker is already running, or the task clearly benefits from MCP tools/resources, use the local `/mcp` endpoint.
 - Local anonymous MCP is intended for localhost flows only; do not assume hosted credentials or `ALL_ROUTES_MCP_TOKEN`.
 - Keep MCP requests narrow and prefer exact airport or airline codes when possible.
 
-### 4) Stay read-only and grounded
+### 5) Stay read-only and grounded
 
 - Do not require hosted secrets.
 - Do not scrape arbitrary third-party sites.
@@ -54,7 +67,7 @@ Before calling an endpoint, translate common user phrasing into the narrowest st
 - Prefer exact IATA, ICAO, or airline codes over fuzzy queries when the user can provide them.
 - Always say whether the answer came from local MCP, a local API, or offline code inspection.
 
-### 5) Use prompts and explanations carefully
+### 6) Use prompts and explanations carefully
 
 - When local MCP is available, `plan_route_options` and `explain_route_coverage` are valid explanation surfaces.
 - Without MCP, explain route coverage using the local API response or code-backed repository behavior instead of pretending a prompt tool exists.

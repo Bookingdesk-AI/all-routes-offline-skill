@@ -26,6 +26,28 @@ When using code inspection only, clearly say the answer is inferred from repo lo
 - Timetable context: `GET /api/timetables?origin=LAX&dest=JFK&airline=AA`
 - Dataset health: `GET /api/data-health`
 
+## Filter Intelligence
+
+Handle user filters before endpoint selection, and echo applied filters in the response so users can trust what was constrained.
+
+### Supported route filters
+
+- **Nonstop/direct only**: map `nonstop`, `direct`, `no stops`, `no connections` to `maxStops=0` on `/api/routes` queries.
+- **Connection-tolerant phrasing**: map `with connections`, `one stop ok`, `any stops` to no nonstop restriction unless the endpoint has a known explicit stops parameter for that case.
+- **Alliance preference**: normalize `star`, `oneworld`, and `skyteam` to the `alliance` query parameter; use `alliance=all` when the user says any alliance or does not care.
+- **Direction**: `from/out of/departing` sets `origin`; `to/into/arriving` sets `dest`; `reverse`, `back`, or `return direction` means swap origin and destination for the next query.
+- **Region preference**: keep as a narrowing lens in the answer unless a local endpoint exposes a region parameter. Do not invent `region=` for `/api/routes`.
+- **Airline preference**: resolve the airline first, then use `/api/airline-routes` for network questions or keep the airline visible as a timetable/route-context constraint when querying airport pairs.
+
+### Applied-filter acknowledgement
+
+Every filtered answer should include a short line naming both API filters and non-API narrowing lenses:
+
+- `Applied filters: origin=HND, dest=SIN, maxStops=0, alliance=star.`
+- `Applied filters: airline=UA route map, region preference=Europe as result narrowing; no nonstop endpoint filter applied.`
+- `Applied filters: reverse direction requested, so searched origin=CDG, dest=JFK; alliance=all.`
+
+If a requested filter cannot be applied directly, say so plainly: `Region is not an exposed route API parameter, so I used it only to prioritize/interpret returned destinations.`
 
 ## Query Normalization
 

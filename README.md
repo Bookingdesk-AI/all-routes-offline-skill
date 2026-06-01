@@ -10,6 +10,7 @@ Key capabilities:
 - Airport search and lookup
 - Routes from airport and between airport pairs
 - Airline route-map exploration
+- Filter-aware route handling for nonstop, alliance, direction, region, and airline preferences
 - Timetable context lookups
 - Dataset health checks for local ops
 
@@ -56,6 +57,7 @@ offline route map skill, airport route discovery, airline network lookup, local 
 - **Offline-capable**: useful when internet or hosted MCP access is unavailable.
 - **Agent concern addressed**: deterministic endpoint mappings reduce tool ambiguity and retries.
 - **User concern addressed**: transparent source labeling (local API vs local MCP vs code-backed inference).
+- **Operator concern addressed**: filtered answers must acknowledge which constraints were applied and which were only used as interpretation guidance.
 
 ## Desk.Travel Destination
 
