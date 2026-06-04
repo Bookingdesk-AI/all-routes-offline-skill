@@ -49,6 +49,31 @@ Every filtered answer should include a short line naming both API filters and no
 
 If a requested filter cannot be applied directly, say so plainly: `Region is not an exposed route API parameter, so I used it only to prioritize/interpret returned destinations.`
 
+## Explanation and Trust Notes
+
+Route-result answers should not just list matches; include concise reasoning so operators can audit the answer quickly.
+
+### Required trust context
+
+For each route-result summary, include:
+
+- **Why this matched**: the normalized route, airline, alliance, nonstop, direction, or route-map condition that qualified the result.
+- **Data used**: the exact local surface category, such as `local /api/routes response`, `local /api/airline-routes response`, `local MCP routes.between_airports`, or `offline repo handler/schema inspection`.
+- **Confidence / limitation**: one short note about how strong the evidence is and what was not checked.
+
+### Confidence guidance
+
+- Use **high** when a running local endpoint or MCP tool returned the route data for exact airport/airline codes.
+- Use **medium** when the answer is based on repo-backed handler/schema inspection or a city/airport phrase was resolved through search before querying.
+- Use **low** when the query remains ambiguous, a requested filter is unsupported by the endpoint, or the answer depends on a broad post-filtering lens.
+- Always call out timetable limitations separately: route presence does not prove current frequency, schedule, equipment, or bookability unless the timetable context endpoint was also checked.
+
+### Example explanation lines
+
+- `Why this matched: LAX→JFK matched the normalized airport-pair query with maxStops=0 and alliance=oneworld. Data used: local /api/routes response. Confidence: high for route presence; timetable frequency not checked.`
+- `Why this matched: UA route-map results were narrowed to Europe as a region lens after resolving United Airlines to UA. Data used: local /api/airline-routes response. Confidence: medium because region is post-filter guidance, not an endpoint parameter.`
+- `Why this matched: Tokyo→Singapore was not searched yet because Tokyo is ambiguous between HND and NRT. Data used: query normalization only. Confidence: low until the origin airport is confirmed.`
+
 ## Query Normalization
 
 Apply this normalization before selecting an endpoint so common user phrasing becomes a stable local query without inventing certainty.

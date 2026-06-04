@@ -11,6 +11,7 @@ Key capabilities:
 - Routes from airport and between airport pairs
 - Airline route-map exploration
 - Filter-aware route handling for nonstop, alliance, direction, region, and airline preferences
+- Concise route-result explanations covering match rationale, local data source, and confidence/limitations
 - Timetable context lookups
 - Dataset health checks for local ops
 
@@ -58,6 +59,7 @@ offline route map skill, airport route discovery, airline network lookup, local 
 - **Agent concern addressed**: deterministic endpoint mappings reduce tool ambiguity and retries.
 - **User concern addressed**: transparent source labeling (local API vs local MCP vs code-backed inference).
 - **Operator concern addressed**: filtered answers must acknowledge which constraints were applied and which were only used as interpretation guidance.
+- **Trust concern addressed**: route-result answers explain why a match qualified, which local surface supplied the evidence, and what confidence or limitation applies.
 
 ## Desk.Travel Destination
 
