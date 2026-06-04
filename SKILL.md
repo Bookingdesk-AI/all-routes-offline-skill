@@ -1,7 +1,7 @@
 ---
 name: all-routes-offline
 description: Use local All Routes APIs, repo-backed handlers, and optional local MCP for airport, airline, route-map, timetable-context, and dataset-health lookups without hosted credentials. Use when route discovery must stay grounded in this repo and work without the hosted All Routes MCP server.
-version: 1.3.24
+version: 1.3.25
 ---
 
 # All Routes Offline
@@ -16,8 +16,9 @@ Use this skill when the task needs route-discovery data grounded in this repo wi
 4. Normalize common airport, city, airline, and alliance phrasing before choosing an endpoint; ask a targeted clarifying question when the normalized query maps to multiple plausible entities.
 5. Extract route filters such as nonstop, alliance, region, and direction before calling endpoints, then acknowledge the filters that were actually applied.
 6. For route results, include a concise trust note: why the route matched, which local surface/data was used, and any confidence or limitation that affects the answer.
-7. If neither server is running, inspect the repo-backed handlers and schemas directly and label the answer as code-backed/offline rather than live endpoint output.
-8. Read `references/local-surfaces.md` for concrete endpoint mappings, query-normalization guidance, filter handling, explanation notes, and startup commands.
+7. When a route search returns no results, recover with the closest useful reformulation or neighboring search instead of ending at a dead result.
+8. If neither server is running, inspect the repo-backed handlers and schemas directly and label the answer as code-backed/offline rather than live endpoint output.
+9. Read `references/local-surfaces.md` for concrete endpoint mappings, query-normalization guidance, filter handling, explanation notes, empty-result recovery, and startup commands.
 
 ## Workflow
 
@@ -58,19 +59,30 @@ For route-result answers, add a compact explanation block after the data summary
 
 Recommended line format: `Why this matched: LAX→JFK matched the normalized airport-pair query with maxStops=0 and alliance=oneworld. Data used: local /api/routes response. Confidence: high for route presence; timetable frequency not checked.`
 
-### 4) Prefer the no-worker path
+### 4) Recover from empty results
+
+When a local route endpoint returns zero matches, keep the answer useful and bounded:
+
+- First, state the exact normalized query and filters that produced no results.
+- Then suggest one closest successful reformulation to try next, such as relaxing `maxStops=0`, switching `alliance=all`, using the nearest resolved airport in a multi-airport city, reversing direction, or moving from an airline route map to a broader airport-pair query.
+- If the query involved an ambiguous city or unsupported region lens, suggest the most precise airport-code reformulation rather than inventing a result.
+- Do not present suggested reformulations as confirmed routes until a local API, local MCP tool, or repo-backed inspection verifies them.
+
+Recommended line format: `No exact local result for HND→SIN with maxStops=0 and alliance=star. Closest next search: relax nonstop to any stops on /api/routes?origin=HND&dest=SIN&alliance=star, or try NRT→SIN if Tokyo was meant as the metro area.`
+
+### 5) Prefer the no-worker path
 
 - The primary path is local web APIs and repo-backed handlers, not hosted MCP.
 - If you need live local responses, start the web app with `pnpm --filter @all-routes/web dev`.
 - If the app is not running, inspect the local route handlers and shared schemas instead of inventing undocumented requests.
 
-### 5) Use local MCP only when helpful
+### 6) Use local MCP only when helpful
 
 - If the worker is already running, or the task clearly benefits from MCP tools/resources, use the local `/mcp` endpoint.
 - Local anonymous MCP is intended for localhost flows only; do not assume hosted credentials or `ALL_ROUTES_MCP_TOKEN`.
 - Keep MCP requests narrow and prefer exact airport or airline codes when possible.
 
-### 6) Stay read-only and grounded
+### 7) Stay read-only and grounded
 
 - Do not require hosted secrets.
 - Do not scrape arbitrary third-party sites.
@@ -78,7 +90,7 @@ Recommended line format: `Why this matched: LAX→JFK matched the normalized air
 - Prefer exact IATA, ICAO, or airline codes over fuzzy queries when the user can provide them.
 - Always say whether the answer came from local MCP, a local API, or offline code inspection.
 
-### 7) Use prompts and explanations carefully
+### 8) Use prompts and explanations carefully
 
 - When local MCP is available, `plan_route_options` and `explain_route_coverage` are valid explanation surfaces.
 - Without MCP, explain route coverage using the local API response or code-backed repository behavior instead of pretending a prompt tool exists.

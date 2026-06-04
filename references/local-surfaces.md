@@ -74,6 +74,29 @@ For each route-result summary, include:
 - `Why this matched: UA route-map results were narrowed to Europe as a region lens after resolving United Airlines to UA. Data used: local /api/airline-routes response. Confidence: medium because region is post-filter guidance, not an endpoint parameter.`
 - `Why this matched: Tokyo→Singapore was not searched yet because Tokyo is ambiguous between HND and NRT. Data used: query normalization only. Confidence: low until the origin airport is confirmed.`
 
+## Empty-Result Recovery
+
+Use this when a local endpoint, MCP tool, or code-backed inspection finds no matching route for the normalized query. The goal is to leave the operator with the next best local search, not a dead end.
+
+### Recovery order
+
+1. **Echo the failed query**: include normalized `origin`, `dest`, `airline`, `alliance`, `maxStops`, direction, and any post-filter lenses.
+2. **Relax the narrowest filter first**: remove `maxStops=0` before dropping alliance or route direction; keep the original user preference visible.
+3. **Try metro-neighbor airports when a city phrase was used**: for New York consider `JFK/LGA/EWR`; London `LHR/LGW/LCY/STN`; Tokyo `HND/NRT`; Paris `CDG/ORY`; San Francisco Bay Area `SFO/OAK/SJC`.
+4. **Broaden airline-specific searches carefully**: if `/api/airline-routes?code=UA` has no narrowed result, suggest a broader airport-pair `/api/routes` query before assuming the carrier does not operate nearby alternatives.
+5. **Reverse only when direction may be the issue**: suggest swapping origin/dest for directional wording like `return`, `back`, or `reverse`, but do not imply both directions are equivalent.
+6. **Do not invent success**: label recovery steps as suggested next searches unless they were actually queried and returned matches.
+
+### Empty-result response template
+
+`No exact local result for {origin}→{dest} with {filters}. Applied filters: {filter list}. Closest next search: {specific endpoint or MCP tool call} because {reason}. Confidence: low until that reformulation is checked.`
+
+### Examples
+
+- `No exact local result for JFK→LHR with maxStops=0 and alliance=skyteam. Closest next search: relax nonstop first with /api/routes?origin=JFK&dest=LHR&alliance=skyteam&page=1&pageSize=10, because the alliance filter may still be useful while nonstop is the narrowest constraint.`
+- `No exact local result for HND→SIN with alliance=star. Closest next search: try NRT→SIN if the user meant Tokyo metro, or search /api/routes?origin=HND&dest=SIN&alliance=all before dropping the airport pair.`
+- `No exact local result in UA route-map results for Paris. Closest next search: resolve Paris as CDG or ORY and query /api/routes?dest=CDG&page=1&pageSize=10&alliance=all, because the airline-specific lens may be too narrow.`
+
 ## Query Normalization
 
 Apply this normalization before selecting an endpoint so common user phrasing becomes a stable local query without inventing certainty.

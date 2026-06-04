@@ -12,6 +12,7 @@ Key capabilities:
 - Airline route-map exploration
 - Filter-aware route handling for nonstop, alliance, direction, region, and airline preferences
 - Concise route-result explanations covering match rationale, local data source, and confidence/limitations
+- Empty-result recovery that suggests the closest useful local reformulation instead of a dead end
 - Timetable context lookups
 - Dataset health checks for local ops
 
@@ -60,6 +61,7 @@ offline route map skill, airport route discovery, airline network lookup, local 
 - **User concern addressed**: transparent source labeling (local API vs local MCP vs code-backed inference).
 - **Operator concern addressed**: filtered answers must acknowledge which constraints were applied and which were only used as interpretation guidance.
 - **Trust concern addressed**: route-result answers explain why a match qualified, which local surface supplied the evidence, and what confidence or limitation applies.
+- **No-result concern addressed**: zero-match answers preserve the failed query details and propose the next best endpoint or MCP reformulation to verify.
 
 ## Desk.Travel Destination
 
