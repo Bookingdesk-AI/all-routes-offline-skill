@@ -1,7 +1,7 @@
 ---
 name: all-routes-offline
 description: Use local All Routes APIs, repo-backed handlers, and optional local MCP for airport, airline, route-map, timetable-context, and dataset-health lookups without hosted credentials. Use when route discovery must stay grounded in this repo and work without the hosted All Routes MCP server.
-version: 1.3.25
+version: 1.3.26
 ---
 
 # All Routes Offline
@@ -18,7 +18,7 @@ Use this skill when the task needs route-discovery data grounded in this repo wi
 6. For route results, include a concise trust note: why the route matched, which local surface/data was used, and any confidence or limitation that affects the answer.
 7. When a route search returns no results, recover with the closest useful reformulation or neighboring search instead of ending at a dead result.
 8. If neither server is running, inspect the repo-backed handlers and schemas directly and label the answer as code-backed/offline rather than live endpoint output.
-9. Read `references/local-surfaces.md` for concrete endpoint mappings, query-normalization guidance, filter handling, explanation notes, empty-result recovery, and startup commands.
+9. Read `references/local-surfaces.md` for concrete endpoint mappings, query-normalization guidance, filter handling, explanation notes, empty-result recovery, worked examples, and startup commands.
 
 ## Workflow
 
@@ -97,4 +97,4 @@ Recommended line format: `No exact local result for HND→SIN with maxStops=0 an
 
 ## Reference File
 
-- Read `references/local-surfaces.md` for local endpoint mappings, startup commands, and fallback guidance.
+- Read `references/local-surfaces.md` for local endpoint mappings, startup commands, fallback guidance, and worked examples for ambiguous city pairs, conflicting airline/alliance filters, unsupported region lenses, and empty-result recovery.

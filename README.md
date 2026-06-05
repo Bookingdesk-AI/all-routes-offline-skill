@@ -13,6 +13,7 @@ Key capabilities:
 - Filter-aware route handling for nonstop, alliance, direction, region, and airline preferences
 - Concise route-result explanations covering match rationale, local data source, and confidence/limitations
 - Empty-result recovery that suggests the closest useful local reformulation instead of a dead end
+- Worked examples for ambiguous city pairs, airline/alliance conflicts, unsupported region lenses, and metro-neighbor recovery
 - Timetable context lookups
 - Dataset health checks for local ops
 
@@ -37,7 +38,7 @@ If services are not running, the skill supports code-backed/offline reasoning fr
 ## Included files
 
 - `SKILL.md` — workflow + guardrails
-- `references/local-surfaces.md` — endpoint/tool mappings and startup commands
+- `references/local-surfaces.md` — endpoint/tool mappings, startup commands, recovery guidance, and worked examples
 - `agents/openai.yaml` — interface metadata
 
 ## Security & privacy posture
@@ -62,6 +63,7 @@ offline route map skill, airport route discovery, airline network lookup, local 
 - **Operator concern addressed**: filtered answers must acknowledge which constraints were applied and which were only used as interpretation guidance.
 - **Trust concern addressed**: route-result answers explain why a match qualified, which local surface supplied the evidence, and what confidence or limitation applies.
 - **No-result concern addressed**: zero-match answers preserve the failed query details and propose the next best endpoint or MCP reformulation to verify.
+- **Example coverage addressed**: tricky real-world phrases now have worked normalization, filter, trust, and recovery response patterns.
 
 ## Desk.Travel Destination
 

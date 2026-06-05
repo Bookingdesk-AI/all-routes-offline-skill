@@ -126,6 +126,45 @@ When a phrase could mean multiple entities, do not force a single route search. 
 
 Recommended fallback wording: “I can search this locally, but `{phrase}` is ambiguous. Did you mean `{option A}` or `{option B}`? If you choose `{code}`, I’ll call `{endpoint}`.”
 
+
+## Worked Example Coverage
+
+Use these examples as operator-visible patterns for tricky real-world route queries. They are examples of how to normalize, constrain, and explain the search; do not present an example route as confirmed unless the corresponding local endpoint or MCP call was actually checked.
+
+### City-pair ambiguity
+
+User phrase: `routes from New York to London nonstop`
+
+- Normalize `New York` as an ambiguous metro origin (`JFK`, `LGA`, `EWR`) and `London` as an ambiguous metro destination (`LHR`, `LGW`, `LCY`, `STN`).
+- Preserve `nonstop` as `maxStops=0`, but do not call `/api/routes` until the airport pair is resolved.
+- Response pattern: `I can search this locally, but New York→London is ambiguous. Did you mean JFK/LGA/EWR to LHR/LGW/LCY/STN? If you choose JFK→LHR, I’ll call /api/routes?origin=JFK&dest=LHR&maxStops=0&page=1&pageSize=10&alliance=all.`
+
+### Airline plus conflicting alliance preference
+
+User phrase: `United flights to Paris on SkyTeam`
+
+- Resolve `United` as `United Airlines (UA)` before using an airline route-map surface.
+- Normalize `SkyTeam` as `alliance=skyteam`, but keep the conflict visible because United is normally a Star Alliance carrier and the local route-map endpoint may not enforce the requested alliance directly.
+- Resolve `Paris` before airport-pair checks (`CDG` vs `ORY`) or use the airline route map with Paris as a narrowing phrase.
+- Response pattern: `Applied filters: airline=UA route map; destination phrase=Paris; alliance preference=skyteam noted as a potential conflict rather than silently applied. Why this matched: United Airlines was resolved to UA before narrowing route-map results toward Paris. Data used: local /api/airline-routes response if queried. Confidence: low until Paris airport and alliance conflict are verified locally.`
+
+### Unsupported region lens
+
+User phrase: `Star Alliance nonstop routes from Tokyo to Southeast Asia`
+
+- Treat `Tokyo` as ambiguous (`HND` or `NRT`) and ask for the airport before querying if the route result depends on exact origin.
+- Normalize `Star Alliance` to `alliance=star` and `nonstop` to `maxStops=0`.
+- Keep `Southeast Asia` as a post-query region lens; do not invent `region=` for `/api/routes`.
+- Response pattern: `Applied filters: alliance=star, maxStops=0; region preference=Southeast Asia as result narrowing only. Tokyo is ambiguous between HND and NRT, so choose one before I call /api/routes?origin={HND|NRT}&maxStops=0&page=1&pageSize=10&alliance=star.`
+
+### Empty-result recovery with metro neighbor
+
+User phrase: `HND to SIN nonstop on Star Alliance` with zero local matches
+
+- Echo the failed exact query: `origin=HND`, `dest=SIN`, `maxStops=0`, `alliance=star`.
+- Relax the narrowest filter first (`maxStops=0`) before dropping alliance, then suggest a Tokyo metro neighbor (`NRT`) as the next airport reformulation.
+- Response pattern: `No exact local result for HND→SIN with maxStops=0 and alliance=star. Applied filters: origin=HND, dest=SIN, maxStops=0, alliance=star. Closest next search: /api/routes?origin=HND&dest=SIN&alliance=star&page=1&pageSize=10 to relax nonstop first; if Tokyo metro was intended, try /api/routes?origin=NRT&dest=SIN&maxStops=0&alliance=star&page=1&pageSize=10. Confidence: low until those reformulations are checked.`
+
 ## Optional Local MCP Mapping
 
 - `airports.search`
