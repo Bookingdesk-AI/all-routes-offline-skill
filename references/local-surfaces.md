@@ -108,6 +108,8 @@ Apply this normalization before selecting an endpoint so common user phrasing be
 - For city-only phrases (`New York`, `London`, `Tokyo`, `Paris`), use airport search with the phrase and avoid silently picking one airport when multiple major airports may match.
 - Preserve direction words: `from`, `departing`, `origin`, `out of` map to `origin`; `to`, `arriving`, `destination`, `into` map to `dest`.
 - For colloquial airport names (`Heathrow`, `Changi`, `Narita`, `Haneda`, `Charles de Gaulle`, `JFK`, `LaGuardia`, `Newark`), search the name first, then use the resolved code in route endpoints.
+- Treat metro-area aliases and compact city codes as ambiguity, not as airport codes: `NYC` → `JFK/LGA/EWR`; `WAS`/`DC` → `DCA/IAD/BWI`; `CHI` → `ORD/MDW`; `LON` → `LHR/LGW/LCY/STN/LTN`; `PAR` → `CDG/ORY`; `TYO` → `HND/NRT`; `Bay Area` → `SFO/OAK/SJC`; `South Florida` → `MIA/FLL/PBI`. Ask the user to pick an airport unless the local airport search returns one clear intended match.
+- For proximity phrasing (`near`, `around`, `closest to`, `Bay Area`, `metro`, `area airports`), search the phrase first and present the top resolved airports before route lookup; do not invent a nearest-airport ranking unless the local data source provides it.
 
 ### Airline and alliance phrases
 

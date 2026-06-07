@@ -8,6 +8,7 @@ Offline/local route-discovery skill for airport, airline, and route network look
 
 Key capabilities:
 - Airport search and lookup
+- Metro-area alias handling for common phrases like NYC, London, Tokyo, DC, and Bay Area
 - Routes from airport and between airport pairs
 - Airline route-map exploration
 - Filter-aware route handling for nonstop, alliance, direction, region, and airline preferences
