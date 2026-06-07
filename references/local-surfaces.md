@@ -111,6 +111,18 @@ Apply this normalization before selecting an endpoint so common user phrasing be
 - Treat metro-area aliases and compact city codes as ambiguity, not as airport codes: `NYC` → `JFK/LGA/EWR`; `WAS`/`DC` → `DCA/IAD/BWI`; `CHI` → `ORD/MDW`; `LON` → `LHR/LGW/LCY/STN/LTN`; `PAR` → `CDG/ORY`; `TYO` → `HND/NRT`; `Bay Area` → `SFO/OAK/SJC`; `South Florida` → `MIA/FLL/PBI`. Ask the user to pick an airport unless the local airport search returns one clear intended match.
 - For proximity phrasing (`near`, `around`, `closest to`, `Bay Area`, `metro`, `area airports`), search the phrase first and present the top resolved airports before route lookup; do not invent a nearest-airport ranking unless the local data source provides it.
 
+### Normalization precedence for compact codes
+
+Use this order when a short token could be an airport, a metro area, or a city shorthand:
+
+1. **Explicit airport wording wins**: `airport`, `from/to {CODE}`, terminal names, or a known airport name can justify `GET /api/airport-lookup?code={code}` before asking for clarification.
+2. **Known metro/city aliases win over blind IATA lookup**: `NYC`, `LON`, `TYO`, `SEL`, `OSA`, `PAR`, `WAS/DC`, `CHI`, `MOW`, `MIL`, `ROM`, `Bay Area`, and `South Florida` should expand to candidate airports because route answers can change by airport.
+3. **Airport search verifies the candidate set**: search the phrase or alias locally, then present the top candidate airports when multiple plausible airports remain.
+4. **Clarify before route lookup when the endpoint needs exactness**: do not call `/api/routes` for a city/metro alias unless the user chooses an airport or explicitly asks for a broad multi-airport scan.
+5. **Document the fallback**: tell the user the exact endpoint you would call after they choose, so the next step is actionable rather than vague.
+
+Clarification pattern: `I can search this locally, but {token} is a metro/city alias. Pick one of {candidate airports}; for {origin}->{dest}, I’ll call /api/routes?origin={origin}&dest={dest}&page=1&pageSize=10&alliance=all.`
+
 ### Airline and alliance phrases
 
 - Airline names (`American`, `American Airlines`, `United`, `Delta`, `Singapore Airlines`) should resolve through airline lookup/search behavior before route-map calls; do not guess if multiple carriers match a short name.
@@ -125,6 +137,8 @@ When a phrase could mean multiple entities, do not force a single route search. 
 - `routes from New York to London` → ask whether origin is `JFK`, `LGA`, or `EWR`, and whether destination is `LHR`, `LGW`, `LCY`, `STN`, or another London airport.
 - `United routes to Paris` → verify `United Airlines (UA)` and ask whether Paris means `CDG` or `ORY` if needed.
 - `Star Alliance from Tokyo to Singapore nonstop` → resolve Tokyo as `HND` vs `NRT`, Singapore as `SIN`, map alliance to `star`, and apply `maxStops=0` if the user confirms nonstop.
+- `NYC to LON direct` → expand both compact aliases before route lookup (`JFK/LGA/EWR` and `LHR/LGW/LCY/STN/LTN`), keep `direct` as `maxStops=0`, and ask for the airport pair or offer a clearly labeled broad multi-airport scan.
+- `BER airport routes to Rome` → `BER airport` can resolve through airport lookup, but `Rome` remains ambiguous (`FCO/CIA`) until airport search or user confirmation narrows it.
 
 Recommended fallback wording: “I can search this locally, but `{phrase}` is ambiguous. Did you mean `{option A}` or `{option B}`? If you choose `{code}`, I’ll call `{endpoint}`.”
 

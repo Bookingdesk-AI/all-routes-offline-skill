@@ -8,7 +8,7 @@ Offline/local route-discovery skill for airport, airline, and route network look
 
 Key capabilities:
 - Airport search and lookup
-- Metro-area alias handling for common phrases like NYC, London, Tokyo, DC, and Bay Area
+- Metro-area alias handling for common phrases like NYC, LON, TYO, SEL, London, Tokyo, DC, and Bay Area
 - Routes from airport and between airport pairs
 - Airline route-map exploration
 - Filter-aware route handling for nonstop, alliance, direction, region, and airline preferences
@@ -65,6 +65,7 @@ offline route map skill, airport route discovery, airline network lookup, local 
 - **Trust concern addressed**: route-result answers explain why a match qualified, which local surface supplied the evidence, and what confidence or limitation applies.
 - **No-result concern addressed**: zero-match answers preserve the failed query details and propose the next best endpoint or MCP reformulation to verify.
 - **Example coverage addressed**: tricky real-world phrases now have worked normalization, filter, trust, and recovery response patterns.
+- **Compact-code safety addressed**: city/metro aliases are expanded before exact route lookup so agents do not accidentally treat `NYC`, `LON`, or `TYO` as single airports.
 
 ## Desk.Travel Destination
 
