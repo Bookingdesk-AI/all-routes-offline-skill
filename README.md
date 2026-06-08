@@ -11,7 +11,7 @@ Key capabilities:
 - Metro-area alias handling for common phrases like NYC, LON, TYO, SEL, London, Tokyo, DC, and Bay Area
 - Routes from airport and between airport pairs
 - Airline route-map exploration
-- Filter-aware route handling for nonstop, alliance, direction, region, and airline preferences
+- Filter-aware route handling for nonstop, alliance, outbound/return direction, region, and airline preferences
 - Concise route-result explanations covering match rationale, local data source, and confidence/limitations
 - Empty-result recovery that suggests the closest useful local reformulation instead of a dead end
 - Worked examples for ambiguous city pairs, airline/alliance conflicts, unsupported region lenses, and metro-neighbor recovery
@@ -61,7 +61,7 @@ offline route map skill, airport route discovery, airline network lookup, local 
 - **Offline-capable**: useful when internet or hosted MCP access is unavailable.
 - **Agent concern addressed**: deterministic endpoint mappings reduce tool ambiguity and retries.
 - **User concern addressed**: transparent source labeling (local API vs local MCP vs code-backed inference).
-- **Operator concern addressed**: filtered answers must acknowledge which constraints were applied and which were only used as interpretation guidance.
+- **Operator concern addressed**: filtered answers must acknowledge which constraints were applied and which were only used as interpretation guidance, including explicit outbound/return direction swaps.
 - **Trust concern addressed**: route-result answers explain why a match qualified, which local surface supplied the evidence, and what confidence or limitation applies.
 - **No-result concern addressed**: zero-match answers preserve the failed query details and propose the next best endpoint or MCP reformulation to verify.
 - **Example coverage addressed**: tricky real-world phrases now have worked normalization, filter, trust, and recovery response patterns.

@@ -1,7 +1,7 @@
 ---
 name: all-routes-offline
 description: Use local All Routes APIs, repo-backed handlers, and optional local MCP for airport, airline, route-map, timetable-context, and dataset-health lookups without hosted credentials. Use when route discovery must stay grounded in this repo and work without the hosted All Routes MCP server.
-version: 1.3.28
+version: 1.3.29
 ---
 
 # All Routes Offline
@@ -47,9 +47,10 @@ Translate user constraints into supported query parameters when possible, and ke
 - Alliance preference: set `alliance=star`, `alliance=oneworld`, `alliance=skyteam`, or `alliance=all` after normalization.
 - Region preference: apply it as a result-summary or follow-up narrowing criterion unless the local endpoint exposes a region parameter; say when it was used as post-filter guidance rather than an API filter.
 - Route direction: preserve `origin` and `dest` exactly; for reverse-route requests, swap the endpoint parameters instead of describing the same query backwards.
+- Return or round-trip phrasing: treat `return`, `back`, `the way home`, or `round trip` as a request for the reverse direction only when an outbound origin/destination is already known; otherwise ask which direction should be searched first instead of guessing.
 - Airline + route filters: for airline route maps, use the carrier route-map endpoint first and describe any route, region, or nonstop preference as the applied narrowing lens.
 
-In every filtered answer, include one compact line such as: `Applied filters: origin=LAX, dest=JFK, nonstop=maxStops=0, alliance=oneworld; region preference noted but not available as an endpoint filter.`
+In every filtered answer, include one compact line such as: `Applied filters: origin=LAX, dest=JFK, nonstop=maxStops=0, alliance=oneworld; region preference noted but not available as an endpoint filter.` For return-direction searches, make the swap explicit: `Applied filters: return direction requested, so searched origin=JFK, dest=LAX; maxStops=0.`
 
 ### 3) Explain route matches with trust context
 

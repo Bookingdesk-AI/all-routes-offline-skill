@@ -36,6 +36,7 @@ Handle user filters before endpoint selection, and echo applied filters in the r
 - **Connection-tolerant phrasing**: map `with connections`, `one stop ok`, `any stops` to no nonstop restriction unless the endpoint has a known explicit stops parameter for that case.
 - **Alliance preference**: normalize `star`, `oneworld`, and `skyteam` to the `alliance` query parameter; use `alliance=all` when the user says any alliance or does not care.
 - **Direction**: `from/out of/departing` sets `origin`; `to/into/arriving` sets `dest`; `reverse`, `back`, or `return direction` means swap origin and destination for the next query.
+- **Return and round-trip phrasing**: treat `return`, `back`, `homebound`, `the way home`, and `round trip` as directional filters, not as proof that both directions have identical coverage. If the outbound airport pair is known, search the reverse pair separately. If only one endpoint is known (`return from Paris`, `round trip from NYC`), ask for the missing endpoint before route lookup.
 - **Region preference**: keep as a narrowing lens in the answer unless a local endpoint exposes a region parameter. Do not invent `region=` for `/api/routes`.
 - **Airline preference**: resolve the airline first, then use `/api/airline-routes` for network questions or keep the airline visible as a timetable/route-context constraint when querying airport pairs.
 
@@ -46,6 +47,7 @@ Every filtered answer should include a short line naming both API filters and no
 - `Applied filters: origin=HND, dest=SIN, maxStops=0, alliance=star.`
 - `Applied filters: airline=UA route map, region preference=Europe as result narrowing; no nonstop endpoint filter applied.`
 - `Applied filters: reverse direction requested, so searched origin=CDG, dest=JFK; alliance=all.`
+- `Applied filters: return leg requested, so searched origin=SIN, dest=HND separately from outbound HND→SIN; maxStops=0, alliance=star.`
 
 If a requested filter cannot be applied directly, say so plainly: `Region is not an exposed route API parameter, so I used it only to prioritize/interpret returned destinations.`
 
@@ -84,7 +86,7 @@ Use this when a local endpoint, MCP tool, or code-backed inspection finds no mat
 2. **Relax the narrowest filter first**: remove `maxStops=0` before dropping alliance or route direction; keep the original user preference visible.
 3. **Try metro-neighbor airports when a city phrase was used**: for New York consider `JFK/LGA/EWR`; London `LHR/LGW/LCY/STN`; Tokyo `HND/NRT`; Paris `CDG/ORY`; San Francisco Bay Area `SFO/OAK/SJC`.
 4. **Broaden airline-specific searches carefully**: if `/api/airline-routes?code=UA` has no narrowed result, suggest a broader airport-pair `/api/routes` query before assuming the carrier does not operate nearby alternatives.
-5. **Reverse only when direction may be the issue**: suggest swapping origin/dest for directional wording like `return`, `back`, or `reverse`, but do not imply both directions are equivalent.
+5. **Reverse only when direction may be the issue**: suggest swapping origin/dest for directional wording like `return`, `back`, or `reverse`, but do not imply both directions are equivalent. For round-trip requests, label outbound and return as separate searches because local route availability, airline coverage, and filters may differ by direction.
 6. **Do not invent success**: label recovery steps as suggested next searches unless they were actually queried and returned matches.
 
 ### Empty-result response template
@@ -180,6 +182,21 @@ User phrase: `HND to SIN nonstop on Star Alliance` with zero local matches
 - Echo the failed exact query: `origin=HND`, `dest=SIN`, `maxStops=0`, `alliance=star`.
 - Relax the narrowest filter first (`maxStops=0`) before dropping alliance, then suggest a Tokyo metro neighbor (`NRT`) as the next airport reformulation.
 - Response pattern: `No exact local result for HND→SIN with maxStops=0 and alliance=star. Applied filters: origin=HND, dest=SIN, maxStops=0, alliance=star. Closest next search: /api/routes?origin=HND&dest=SIN&alliance=star&page=1&pageSize=10 to relax nonstop first; if Tokyo metro was intended, try /api/routes?origin=NRT&dest=SIN&maxStops=0&alliance=star&page=1&pageSize=10. Confidence: low until those reformulations are checked.`
+
+### Return-leg direction safety
+
+User phrase: `return from Singapore to Tokyo nonstop on Star Alliance` after an outbound `HND to SIN` search
+
+- Treat `return` as a direction filter and search the reverse pair separately: `origin=SIN`, `dest=HND`.
+- Keep previously stated filters only when the user carries them forward (`nonstop`, `Star Alliance`), and restate them as applied filters.
+- Do not assume route availability is symmetric; route presence, carrier coverage, and timetable context can differ by direction.
+- Response pattern: `Applied filters: return leg requested, so searched origin=SIN, dest=HND separately from outbound HND→SIN; maxStops=0, alliance=star. Why this matched: the return route must qualify independently in the local /api/routes response. Confidence: high only if the reverse endpoint returned results; timetable frequency not checked.`
+
+User phrase: `round trip from NYC to London direct`
+
+- Expand both metro aliases (`NYC` and `London`) before any route lookup.
+- Ask for the outbound airport pair first, then search outbound and return directions as separate endpoint calls.
+- Response pattern: `I can search this locally, but round-trip city pairs need exact airports in both directions. Pick an outbound pair such as JFK→LHR; then I’ll check /api/routes?origin=JFK&dest=LHR&maxStops=0&page=1&pageSize=10&alliance=all and the return /api/routes?origin=LHR&dest=JFK&maxStops=0&page=1&pageSize=10&alliance=all separately.`
 
 ## Optional Local MCP Mapping
 
