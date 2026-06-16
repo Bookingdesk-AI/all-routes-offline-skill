@@ -9,6 +9,7 @@ Offline/local route-discovery skill for airport, airline, and route network look
 Key capabilities:
 - Airport search and lookup
 - Metro-area alias handling for common phrases like NYC, LON, TYO, SEL, London, Tokyo, DC, and Bay Area
+- Colloquial airport-name normalization for common nicknames like Kennedy, Dulles, O'Hare, Heathrow, Haneda, Changi, Pearson, and Billy Bishop
 - Routes from airport and between airport pairs
 - Airline route-map exploration
 - Filter-aware route handling for nonstop, alliance, outbound/return direction, region, and airline preferences
@@ -66,6 +67,7 @@ offline route map skill, airport route discovery, airline network lookup, local 
 - **No-result concern addressed**: zero-match answers preserve the failed query details and propose the next best endpoint or MCP reformulation to verify.
 - **Example coverage addressed**: tricky real-world phrases now have worked normalization, filter, trust, and recovery response patterns.
 - **Compact-code safety addressed**: city/metro aliases are expanded before exact route lookup so agents do not accidentally treat `NYC`, `LON`, or `TYO` as single airports.
+- **Nickname safety addressed**: colloquial airport names are verified through local airport search/lookup before route queries, with clarifications for collisions like Newark, National, or London City.
 
 ## Desk.Travel Destination
 

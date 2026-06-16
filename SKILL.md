@@ -1,7 +1,7 @@
 ---
 name: all-routes-offline
 description: Use local All Routes APIs, repo-backed handlers, and optional local MCP for airport, airline, route-map, timetable-context, and dataset-health lookups without hosted credentials. Use when route discovery must stay grounded in this repo and work without the hosted All Routes MCP server.
-version: 1.3.29
+version: 1.3.30
 ---
 
 # All Routes Offline
@@ -13,7 +13,7 @@ Use this skill when the task needs route-discovery data grounded in this repo wi
 1. Prefer local repo surfaces over hosted services or third-party browsing.
 2. If the web app is available locally, use its `/api/*` endpoints first.
 3. If the worker is available locally, you may use the local anonymous `/mcp` endpoint as an optional secondary path.
-4. Normalize common airport, city, airline, and alliance phrasing before choosing an endpoint; ask a targeted clarifying question when the normalized query maps to multiple plausible entities.
+4. Normalize common airport, city, colloquial airport-name, airline, and alliance phrasing before choosing an endpoint; ask a targeted clarifying question when the normalized query maps to multiple plausible entities.
 5. Extract route filters such as nonstop, alliance, region, and direction before calling endpoints, then acknowledge the filters that were actually applied.
 6. For route results, include a concise trust note: why the route matched, which local surface/data was used, and any confidence or limitation that affects the answer.
 7. When a route search returns no results, recover with the closest useful reformulation or neighboring search instead of ending at a dead result.
@@ -32,12 +32,12 @@ Use this skill when the task needs route-discovery data grounded in this repo wi
 
 Before calling an endpoint, translate common user phrasing into the narrowest stable identifiers:
 
-- Airport/city: prefer exact IATA/ICAO codes when supplied, but check known metro/city aliases (`NYC`, `LON`, `TYO`, etc.) before treating a three-letter token as one airport; otherwise search the city/airport phrase and preserve ambiguity instead of guessing.
+- Airport/city: prefer exact IATA/ICAO codes when supplied, but check known metro/city aliases (`NYC`, `LON`, `TYO`, etc.) and colloquial airport names (`Kennedy`, `Dulles`, `Heathrow`, `Changi`, etc.) before treating short text as one airport; otherwise search the city/airport phrase and preserve ambiguity instead of guessing.
 - Airline: normalize airline names, two-letter IATA, and three-letter ICAO codes into the airline lookup or route-map surfaces.
 - Alliance: map common alliance phrases to the API-supported alliance filter values and say when no alliance filter was applied.
 - Ambiguous phrases: return a short clarification prompt with the top plausible interpretations and the endpoint you would call for each.
 - Metro aliases and compact city codes (`NYC`, `LON`, `TYO`, `Bay Area`) should expand to candidate airports rather than silently resolving to one airport.
-- Dual-use or collision-prone tokens should use the local lookup result plus the user's wording to decide whether to clarify, e.g. `BER airport` can resolve to the airport, while `Berlin routes` should preserve the city/airport distinction.
+- Dual-use or collision-prone tokens should use the local lookup result plus the user's wording to decide whether to clarify, e.g. `BER airport` can resolve to the airport, while `Berlin routes` should preserve the city/airport distinction; nickname collisions like `Newark` or `London City` should resolve only when the wording clearly names the airport.
 
 ### 2) Apply route filters explicitly
 

@@ -113,6 +113,19 @@ Apply this normalization before selecting an endpoint so common user phrasing be
 - Treat metro-area aliases and compact city codes as ambiguity, not as airport codes: `NYC` → `JFK/LGA/EWR`; `WAS`/`DC` → `DCA/IAD/BWI`; `CHI` → `ORD/MDW`; `LON` → `LHR/LGW/LCY/STN/LTN`; `PAR` → `CDG/ORY`; `TYO` → `HND/NRT`; `Bay Area` → `SFO/OAK/SJC`; `South Florida` → `MIA/FLL/PBI`. Ask the user to pick an airport unless the local airport search returns one clear intended match.
 - For proximity phrasing (`near`, `around`, `closest to`, `Bay Area`, `metro`, `area airports`), search the phrase first and present the top resolved airports before route lookup; do not invent a nearest-airport ranking unless the local data source provides it.
 
+### Colloquial airport names and nickname aliases
+
+Resolve well-known airport nicknames, legacy names, and local shorthand through airport search before route lookup. These phrases are common in human route questions but should still be verified locally because some names also describe cities, regions, or multiple airports.
+
+- New York area: `Kennedy` / `JFK Airport` → `JFK`; `LaGuardia` / `LGA` → `LGA`; `Newark` / `Newark Liberty` → `EWR` only when the wording is airport-specific.
+- Washington/Baltimore: `Reagan`, `National`, `Reagan National` → `DCA`; `Dulles` → `IAD`; `BWI` / `Baltimore airport` → `BWI`.
+- Chicago: `O'Hare` / `Ohare` → `ORD`; `Midway` → `MDW`.
+- London: `Heathrow` → `LHR`; `Gatwick` → `LGW`; `London City airport` → `LCY`; `Stansted` → `STN`; `Luton` → `LTN`. Treat bare `London City` as potentially city phrasing unless the route wording clearly means the airport.
+- Paris/Tokyo/Seoul: `Charles de Gaulle` / `CDG` → `CDG`; `Orly` → `ORY`; `Haneda` → `HND`; `Narita` → `NRT`; `Incheon` → `ICN`; `Gimpo` / `Kimpo` → `GMP`.
+- Major international shorthand: `Changi` → `SIN`; `Chek Lap Kok` / `Hong Kong airport` → `HKG`; `Hamad` → `DOH`; `Dubai airport` → `DXB`; `Schiphol` → `AMS`; `Fiumicino` → `FCO`; `Malpensa` → `MXP`; `Pearson` → `YYZ`; `Billy Bishop` → `YTZ`.
+
+Nickname fallback pattern: `I can search this locally, but {phrase} might be an airport nickname or a broader place. I’ll first verify it with /api/airports?query={phrase}&limit=5; if it resolves to {code}, I’ll call /api/routes?origin={code}&dest={dest}&page=1&pageSize=10&alliance=all.`
+
 ### Normalization precedence for compact codes
 
 Use this order when a short token could be an airport, a metro area, or a city shorthand:
@@ -124,6 +137,15 @@ Use this order when a short token could be an airport, a metro area, or a city s
 5. **Document the fallback**: tell the user the exact endpoint you would call after they choose, so the next step is actionable rather than vague.
 
 Clarification pattern: `I can search this locally, but {token} is a metro/city alias. Pick one of {candidate airports}; for {origin}->{dest}, I’ll call /api/routes?origin={origin}&dest={dest}&page=1&pageSize=10&alliance=all.`
+
+### Airport-name ambiguity fallback
+
+When a nickname or local shorthand collides with a city/region name, prefer a clarification over a silent airport lookup unless the user used airport-specific wording.
+
+- `routes from Newark to London` may mean EWR or the city of Newark; ask or verify with airport search before setting `origin=EWR`.
+- `London City to Zurich` can resolve to `LCY→ZRH` when the phrase appears in route position, but `London city routes` should remain a city/metro query.
+- `National to Chicago` should clarify `Reagan National (DCA)` if the surrounding wording does not make the airport obvious.
+- If a colloquial phrase resolves to exactly one airport in local search, use it but include the normalization in the applied-filter line: `Applied filters: origin=DCA (resolved from Reagan National), dest=ORD (resolved from O'Hare), alliance=all.`
 
 ### Airline and alliance phrases
 
