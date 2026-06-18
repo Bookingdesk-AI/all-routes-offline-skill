@@ -149,10 +149,18 @@ When a nickname or local shorthand collides with a city/region name, prefer a cl
 
 ### Airline and alliance phrases
 
+Resolve carrier and alliance language before route-map or route-pair queries so common marketing names and abbreviations do not become silent wrong filters.
+
 - Airline names (`American`, `American Airlines`, `United`, `Delta`, `Singapore Airlines`) should resolve through airline lookup/search behavior before route-map calls; do not guess if multiple carriers match a short name.
 - Airline codes can be IATA (`AA`, `UA`, `DL`, `SQ`) or ICAO-style (`AAL`, `UAL`, `DAL`, `SIA`); verify the carrier before using `GET /api/airline-routes?code={code}`.
-- Normalize alliance phrases case-insensitively: `star`, `star alliance` → `star`; `oneworld`, `one world` → `oneworld`; `skyteam`, `sky team` → `skyteam`; `any alliance`, `all alliances`, or no phrase → `all`.
+- Common carrier shorthands should still be verified locally before use: `AA`/`American` → American Airlines, `UA`/`United` → United Airlines, `DL`/`Delta` → Delta Air Lines, `WN`/`Southwest` → Southwest Airlines, `AS`/`Alaska` → Alaska Airlines, `BA`/`British Airways` → British Airways, `LH`/`Lufthansa` → Lufthansa, `AF`/`Air France` → Air France, `KL`/`KLM` → KLM, `SQ`/`Singapore` → Singapore Airlines, `NH`/`ANA` → All Nippon Airways, `JL`/`JAL` → Japan Airlines, `CX`/`Cathay` → Cathay Pacific, `QF`/`Qantas` → Qantas, `EK`/`Emirates` → Emirates, `QR`/`Qatar` → Qatar Airways, `TK`/`Turkish` → Turkish Airlines.
+- Watch for collision-prone or informal airline phrases: `American` could be an airline or nationality adjective; `Alaska` and `Southwest` can be places/regions; `SAS` can refer to Scandinavian Airlines or non-airline acronyms; `ANA` can collide with a personal name; `Air China` and `China Airlines` are different carriers. If the local airline lookup/search does not return one decisive carrier, ask a short clarification before calling `/api/airline-routes`.
+- Normalize alliance phrases case-insensitively: `star`, `star alliance`, `*A`, `SA` → `star`; `oneworld`, `one world`, `OW` → `oneworld`; `skyteam`, `sky team`, `ST` → `skyteam`; `any alliance`, `all alliances`, `non-alliance ok`, or no phrase → `all`.
 - If an airline is requested together with a conflicting alliance preference, keep both constraints visible in the answer and warn that the combination may produce no results.
+
+Carrier clarification pattern: `I can search this locally, but {phrase} may not identify one carrier. I’ll verify it with /api/airline-lookup?code={code} or airline search first; if it resolves to {carrier_code}, I’ll call /api/airline-routes?code={carrier_code}&query={route_or_city}&page=1&pageSize=50.`
+
+Alliance conflict pattern: `Applied filters: airline={carrier_code} route map; alliance preference={alliance} noted as a possible conflict, not silently applied as a carrier filter. Closest exact check: /api/routes?origin={origin}&dest={dest}&alliance={alliance}&page=1&pageSize=10 after the airport pair is known.`
 
 ### Ambiguity fallback guidance
 
@@ -187,6 +195,15 @@ User phrase: `United flights to Paris on SkyTeam`
 - Normalize `SkyTeam` as `alliance=skyteam`, but keep the conflict visible because United is normally a Star Alliance carrier and the local route-map endpoint may not enforce the requested alliance directly.
 - Resolve `Paris` before airport-pair checks (`CDG` vs `ORY`) or use the airline route map with Paris as a narrowing phrase.
 - Response pattern: `Applied filters: airline=UA route map; destination phrase=Paris; alliance preference=skyteam noted as a potential conflict rather than silently applied. Why this matched: United Airlines was resolved to UA before narrowing route-map results toward Paris. Data used: local /api/airline-routes response if queried. Confidence: low until Paris airport and alliance conflict are verified locally.`
+
+### Airline shorthand ambiguity
+
+User phrase: `American routes from Alaska to Hawaii`
+
+- Treat `American` as a carrier phrase only after local airline lookup/search resolves it to `AA`; do not assume it if the surrounding wording could mean U.S.-domestic routes generally.
+- Treat `Alaska` as a place/region unless the user says `Alaska Airlines` or `AS`; do not rewrite it to carrier `AS` while also using `American` as carrier `AA`.
+- Resolve the origin airport or region separately (for example `ANC`, `FAI`, or another Alaska airport) before calling `/api/routes`; if the user means Alaska Airlines, switch to `/api/airline-routes?code=AS`.
+- Response pattern: `I can search this locally, but "American routes from Alaska" has two possible carrier/place readings. Did you mean American Airlines (AA) from Alaska airports, or Alaska Airlines (AS) to Hawaii? If AA from ANC→HNL, I’ll call /api/routes?origin=ANC&dest=HNL&page=1&pageSize=10&alliance=all; if Alaska Airlines network, I’ll call /api/airline-routes?code=AS&query=Hawaii&page=1&pageSize=50.`
 
 ### Unsupported region lens
 
