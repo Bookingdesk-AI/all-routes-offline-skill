@@ -147,6 +147,18 @@ When a nickname or local shorthand collides with a city/region name, prefer a cl
 - `National to Chicago` should clarify `Reagan National (DCA)` if the surrounding wording does not make the airport obvious.
 - If a colloquial phrase resolves to exactly one airport in local search, use it but include the normalization in the applied-filter line: `Applied filters: origin=DCA (resolved from Reagan National), dest=ORD (resolved from O'Hare), alliance=all.`
 
+### Country and region phrase normalization
+
+Treat geographic phrases as route lenses or airport-set prompts, not as exact route endpoint values, unless the user supplied a specific airport code or the local airport search returns one decisive airport. This avoids silently converting broad travel intent into the wrong single airport.
+
+- Country, state, island, or region phrases such as `Hawaii`, `Alaska`, `Florida`, `California`, `Europe`, `Southeast Asia`, `Caribbean`, and `Middle East` should be preserved as result-narrowing lenses or expanded through local airport search before calling `/api/routes`.
+- For island/region names with multiple plausible airports, present the most likely local airport candidates from search and ask for the route anchor before exact lookup. Examples: `Hawaii` may imply `HNL`, `OGG`, `KOA`, or `LIH`; `Alaska` may imply `ANC`, `FAI`, or other airports; `South Florida` may imply `MIA`, `FLL`, or `PBI`.
+- Do not use a region phrase as `origin`, `dest`, or `query` evidence for a confirmed route result unless the answer is explicitly about a carrier route-map text search rather than an airport-pair route.
+- When a user asks for routes `to Hawaii` or `from Alaska`, first decide whether the local task is a broad route-map scan or an exact airport-pair lookup. If exact route presence matters, ask for the destination/origin airport or offer a clearly labeled multi-airport scan.
+- Keep geographic lenses visible in applied-filter lines: `Applied filters: airline=AA route map; destination lens=Hawaii; exact airport not selected, so no /api/routes airport-pair query was run.`
+
+Geographic ambiguity pattern: `I can search this locally, but {place} is a region with multiple airports. Pick one of {candidate airports}, or I can run a clearly labeled multi-airport scan; for {origin}->{candidate}, I’ll call /api/routes?origin={origin}&dest={candidate}&page=1&pageSize=10&alliance=all.`
+
 ### Airline and alliance phrases
 
 Resolve carrier and alliance language before route-map or route-pair queries so common marketing names and abbreviations do not become silent wrong filters.
@@ -186,6 +198,15 @@ User phrase: `routes from New York to London nonstop`
 - Normalize `New York` as an ambiguous metro origin (`JFK`, `LGA`, `EWR`) and `London` as an ambiguous metro destination (`LHR`, `LGW`, `LCY`, `STN`).
 - Preserve `nonstop` as `maxStops=0`, but do not call `/api/routes` until the airport pair is resolved.
 - Response pattern: `I can search this locally, but New York→London is ambiguous. Did you mean JFK/LGA/EWR to LHR/LGW/LCY/STN? If you choose JFK→LHR, I’ll call /api/routes?origin=JFK&dest=LHR&maxStops=0&page=1&pageSize=10&alliance=all.`
+
+### Region-to-airport ambiguity
+
+User phrase: `direct routes from LAX to Hawaii on American`
+
+- Resolve `American` through local airline lookup before using carrier-specific surfaces.
+- Treat `Hawaii` as a region/island-state destination lens, not a single airport code; likely airport candidates must come from local airport search or user selection (`HNL`, `OGG`, `KOA`, `LIH`, etc.).
+- Preserve `direct` as `maxStops=0`, but do not claim an airport-pair route until a specific Hawaii airport is checked.
+- Response pattern: `I can search this locally, but Hawaii has multiple airports. Did you mean HNL, OGG, KOA, or LIH? Applied filters ready: origin=LAX, airline=AA if American resolves locally, maxStops=0, destination lens=Hawaii. If you choose HNL, I’ll call /api/routes?origin=LAX&dest=HNL&maxStops=0&page=1&pageSize=10&alliance=all and keep the AA preference visible unless using an AA route-map query.`
 
 ### Airline plus conflicting alliance preference
 
